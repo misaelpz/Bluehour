@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La hora azul — para Ariana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --noche:      #080B24;
+    --azul-hora:  #2234A0;
+    --azul:       #23306E;
+    --peri:       #7C8FD6;
+    --rosa:       #E5A0A6;
+    --durazno:    #F3C89C;
+    --crema:      #F6F0E7;
+    --crema-mute: rgba(246,240,231,.62);
+
+    /* estos tres los mueve el JS capítulo a capítulo */
+    --cielo-alto:  #060819;
+    --cielo-medio: #0D1436;
+    --cielo-bajo:  #131C4A;
+    --luz:         0.10;   /* intensidad del resplandor del horizonte */
+    --estrellas:   1;      /* opacidad de las estrellas */
+
+    --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --sans:  'Jost', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{ height:100%; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(to bottom,
+        var(--cielo-alto) 0%,
+        var(--cielo-medio) 48%,
+        var(--cielo-bajo) 100%);
+    transition: background 2200ms cubic-bezier(.4,0,.2,1);
+    color:var(--crema);
+    font-family:var(--sans);
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100dvh;
+  }
+
+  /* ---------- cielo ---------- */
+  .cielo{ position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+  .estrellas{ position:absolute; inset:0; opacity:var(--estrellas); transition:opacity 2200ms ease; }
+  .estrella{
+    position:absolute; border-radius:50%; background:var(--crema);
+    animation: titilar var(--dur,5s) ease-in-out infinite;
+    animation-delay: var(--del,0s);
+  }
+  @keyframes titilar{
+    0%,100%{ opacity:.18; }
+    50%    { opacity:.85; }
+  }
+
+  .horizonte{
+    position:absolute; left:50%; bottom:-34vh; transform:translateX(-50%);
+    width:170vw; height:78vh;
+    background: radial-gradient(ellipse at center,
+                  rgba(243,200,156,.95) 0%,
+                  rgba(229,160,166,.55) 28%,
+                  rgba(124,143,214,.30) 55%,
+                  rgba(124,143,214,0) 76%);
+    opacity:var(--luz);
+    filter: blur(14px);
+    transition: opacity 2200ms ease;
+  }
+
+  .linea{
+    position:absolute; left:0; right:0; bottom:9vh; height:1px;
+    background:linear-gradient(to right, transparent, rgba(246,240,231,.30) 22%, rgba(246,240,231,.30) 78%, transparent);
+    opacity:calc(var(--luz) * 1.5);
+    transition:opacity 2200ms ease;
+  }
+
+  /* ---------- estructura ---------- */
+  .escenario{
+    position:relative; z-index:1;
+    min-height:100dvh;
+    display:grid; place-items:center;
+    padding:5.5rem 1.5rem 7rem;
+  }
+
+  .capitulo{
+    display:none;
+    width:100%;
+    max-width:40rem;
+    animation: entrar 1100ms cubic-bezier(.16,1,.3,1) both;
+  }
+  .capitulo.activo{ display:block; }
+
+  @keyframes entrar{
+    from{ opacity:0; transform:translateY(14px); }
+    to  { opacity:1; transform:none; }
+  }
+
+  /* ---------- tipografía ---------- */
+  .titulo{
+    font-family:var(--serif);
+    font-weight:300;
+    font-style:italic;
+    font-size:clamp(2.35rem, 7.5vw, 4rem);
+    line-height:1.08;
+    letter-spacing:-.015em;
+    margin:0 0 1.6rem;
+  }
+
+  .parrafo{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:clamp(1.15rem, 2.6vw, 1.35rem);
+    line-height:1.75;
+    max-width:36rem;
+    margin:0 0 1.15rem;
+    color:rgba(246,240,231,.88);
+  }
+  .parrafo:last-of-type{ margin-bottom:0; }
+
+  .realce{
+    font-style:italic;
+    color:var(--durazno);
+  }
+
+  .centro{ text-align:center; }
+  .centro .parrafo{ margin-left:auto; margin-right:auto; }
+
+  /* ---------- portada ---------- */
+  .portada-susurro{
+    font-family:var(--sans);
+    font-weight:300;
+    font-size:.82rem;
+    letter-spacing:.24em;
+    color:rgba(246,240,231,.42);
+    margin:0 0 2.4rem;
+  }
+
+  .nombre{
+    font-family:var(--serif);
+    font-weight:300;
+    font-size:clamp(4rem, 19vw, 9rem);
+    line-height:.92;
+    letter-spacing:-.03em;
+    margin:0 0 1.8rem;
+    background:linear-gradient(105deg, var(--crema) 8%, var(--durazno) 46%, var(--rosa) 72%, var(--peri) 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  /* ---------- carta ---------- */
+  .carta{
+    border:1px solid rgba(246,240,231,.14);
+    border-radius:2px;
+    padding:clamp(1.75rem, 5vw, 3.25rem);
+    background:linear-gradient(170deg, rgba(246,240,231,.055), rgba(246,240,231,.015));
+    backdrop-filter:blur(2px);
+  }
+  .carta .parrafo{ font-size:clamp(1.08rem, 2.4vw, 1.22rem); line-height:1.82; }
+
+  .firma{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:1.5rem;
+    color:var(--durazno);
+    margin:2.5rem 0 0;
+    text-align:right;
+  }
+
+  /* ---------- pregunta ---------- */
+  .pregunta{
+    font-family:var(--serif);
+    font-weight:300;
+    font-size:clamp(1.65rem, 5.2vw, 2.6rem);
+    line-height:1.32;
+    margin:0 0 2.75rem;
+    text-wrap:balance;
+  }
+
+  /* ---------- botones ---------- */
+  .acciones{ margin-top:3rem; display:flex; flex-wrap:wrap; gap:.9rem; }
+  .centro .acciones{ justify-content:center; }
+
+  .btn{
+    font-family:var(--sans);
+    font-weight:300;
+    font-size:.94rem;
+    letter-spacing:.12em;
+    color:var(--crema);
+    background:transparent;
+    border:1px solid rgba(246,240,231,.35);
+    border-radius:999px;
+    padding:.92rem 2.1rem;
+    cursor:pointer;
+    transition: background 420ms ease, border-color 420ms ease, color 420ms ease, transform 420ms ease;
+  }
+  .btn:hover,.btn:focus-visible{
+    background:rgba(246,240,231,.10);
+    border-color:rgba(246,240,231,.7);
+  }
+  .btn:focus-visible{ outline:2px solid var(--durazno); outline-offset:3px; }
+  .btn:active{ transform:translateY(1px); }
+
+  .btn-si{
+    border-color:var(--durazno);
+    color:#1A1330;
+    background:linear-gradient(100deg, var(--durazno), var(--rosa));
+    font-weight:400;
+    padding-inline:2.6rem;
+  }
+  .btn-si:hover,.btn-si:focus-visible{
+    background:linear-gradient(100deg, var(--rosa), var(--durazno));
+    border-color:var(--crema);
+    color:#1A1330;
+  }
+
+  .btn-tenue{
+    border-color:rgba(246,240,231,.2);
+    color:rgba(246,240,231,.66);
+  }
+
+  .volver{
+    background:none; border:none; cursor:pointer;
+    font-family:var(--sans); font-weight:300; font-size:.82rem;
+    letter-spacing:.14em;
+    color:rgba(246,240,231,.38);
+    padding:.5rem 0; margin-top:2.2rem;
+    transition:color 380ms ease;
+  }
+  .volver:hover,.volver:focus-visible{ color:rgba(246,240,231,.8); }
+  .volver:focus-visible{ outline:1px solid var(--durazno); outline-offset:4px; }
+
+  .credito{
+    background:none; border:none; cursor:pointer;
+    font-family:var(--sans); font-weight:300; font-size:.76rem;
+    letter-spacing:.16em;
+    color:rgba(246,240,231,.34);
+    padding:.6rem .2rem; margin-top:2.6rem;
+    transition:color 380ms ease;
+  }
+  .credito:hover,.credito:focus-visible{ color:rgba(246,240,231,.72); }
+  .credito:focus-visible{ outline:1px solid var(--durazno); outline-offset:4px; }
+
+  /* ---------- progreso ---------- */
+  .progreso{
+    position:fixed; left:50%; bottom:2.1rem; transform:translateX(-50%);
+    z-index:3; display:flex; gap:.55rem; align-items:center;
+    transition:opacity 700ms ease;
+  }
+  .punto{
+    width:5px; height:5px; border-radius:50%;
+    background:rgba(246,240,231,.22);
+    transition: background 700ms ease, transform 700ms ease;
+  }
+  .punto.visto{ background:rgba(246,240,231,.45); }
+  .punto.aqui{ background:var(--durazno); transform:scale(1.7); }
+
+  /* ---------- música ---------- */
+  .musica{
+    position:fixed; top:1.4rem; right:1.4rem; z-index:4;
+    width:42px; height:42px; border-radius:50%;
+    display:grid; place-items:center;
+    background:rgba(246,240,231,.06);
+    border:1px solid rgba(246,240,231,.22);
+    color:rgba(246,240,231,.72);
+    cursor:pointer;
+    transition: background 400ms ease, color 400ms ease, border-color 400ms ease;
+  }
+  .musica:hover,.musica:focus-visible{ background:rgba(246,240,231,.14); color:var(--crema); border-color:rgba(246,240,231,.5); }
+  .musica:focus-visible{ outline:2px solid var(--durazno); outline-offset:3px; }
+  .musica svg{ width:17px; height:17px; }
+  .musica .onda{ transition:opacity 500ms ease; }
+  .musica[data-sonando="no"] .onda{ opacity:.22; }
+
+  .oculto{ display:none !important; }
+
+  /* ---------- final ---------- */
+  .corazon{
+    font-family:var(--serif); font-style:italic;
+    font-size:clamp(2.6rem, 9vw, 4.6rem);
+    line-height:1.15;
+    margin:0 0 1.5rem;
+    color:var(--durazno);
+  }
+
+  @media (max-width:520px){
+    .escenario{ padding:4.5rem 1.25rem 6rem; }
+    .acciones{ flex-direction:column; align-items:stretch; }
+    .btn{ width:100%; }
+    .firma{ text-align:left; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cielo" aria-hidden="true">
+  <div class="estrellas" id="estrellas"></div>
+  <div class="horizonte"></div>
+  <div class="linea"></div>
+</div>
+
+<button class="musica" id="musica" data-sonando="no" aria-label="Poner la música">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+    <path d="M9 18V6l10-2v12"/>
+    <circle cx="6.5" cy="18" r="2.6"/><circle cx="16.5" cy="16" r="2.6"/>
+    <path class="onda" d="M21.5 7.5c1 1.4 1 4.6 0 6"/>
+  </svg>
+</button>
+<audio id="audio" loop preload="none"></audio>
+<input type="file" id="archivo" accept="audio/*" class="oculto">
+
+<main class="escenario">
+
+  <!-- 0 -->
+  <section class="capitulo activo centro" data-cap="0"
+           data-alto="#060819" data-medio="#0D1436" data-bajo="#131C4A" data-luz=".10" data-estrellas="1">
+    <p class="portada-susurro">para ti</p>
+    <h1 class="nombre">Ariana</h1>
+    <p class="parrafo">Hay algo que llevo años sin poder decirte bien. Hoy quiero intentarlo, sin apuro y sin adornos.</p>
+    <p class="parrafo">Solo te pido una cosa: léelo hasta el final.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="1">Empezar</button>
+    </div>
+    <button class="credito" id="credito">♪&nbsp;&nbsp;Blue Hour — TXT</button>
+  </section>
+
+  <!-- 1 -->
+  <section class="capitulo" data-cap="1"
+           data-alto="#070A20" data-medio="#101841" data-bajo="#182154" data-luz=".14" data-estrellas=".95">
+    <h2 class="titulo">Antes de<br>darme cuenta…</h2>
+    <p class="parrafo">Te conocí en el colegio. A decir verdad usted me salvó de muchas y sobre todo viví una bella amistad a su lado, y estaba bien así.</p>
+    <p class="parrafo">Después, un día cualquiera, dejaste de ser solamente eso. No sabría decirte qué día fue ni qué lo cambió. Solo sé que de un momento a otro yo era capaz de cualquier cosa por ti, y que nunca me pareció raro.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="2">Seguir</button>
+    </div>
+    <button class="volver" data-ir="0">volver</button>
+  </section>
+
+  <!-- 2 -->
+  <section class="capitulo" data-cap="2"
+           data-alto="#08102C" data-medio="#152056" data-bajo="#202C6B" data-luz=".20" data-estrellas=".85">
+    <h2 class="titulo">El error que sí<br>sé nombrar</h2>
+    <p class="parrafo">Me alejé. No porque dejaras de importarme, sino porque me importabas demasiado y yo todavía no sabía con qué manos sostener algo así.</p>
+    <p class="parrafo">No supe cómo reaccionar a mis propias emociones. Como no vi ningún avance en todo esto, no me fijé que el que no sabía avanzar era yo. Ese error es mío, mi reina, y no vengo a disfrazarlo.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="3">Seguir</button>
+    </div>
+    <button class="volver" data-ir="1">volver</button>
+  </section>
+
+  <!-- 3 -->
+  <section class="capitulo" data-cap="3"
+           data-alto="#0B1738" data-medio="#1E2A68" data-bajo="#2B3880" data-luz=".30" data-estrellas=".62">
+    <h2 class="titulo">Los años<br>que vinieron después</h2>
+    <p class="parrafo">Pasó su debido tiempo. Estuve con otras personas y algo curioso me fue pasando: a ellas las pude soltar. Cierro esa puerta, no vuelvo a mirar y sigo caminando.</p>
+    <p class="parrafo">Contigo nunca pude. Estuvieras o no estuvieras, tú seguías ahí. <span class="realce">No es nostalgia. Es que a tu lado me siento vivo</span>, y eso no lo he vuelto a sentir con nadie.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="4">Seguir</button>
+    </div>
+    <button class="volver" data-ir="2">volver</button>
+  </section>
+
+  <!-- 4 -->
+  <section class="capitulo" data-cap="4"
+           data-alto="#132047" data-medio="#2B3781" data-bajo="#4A4E96" data-luz=".45" data-estrellas=".38">
+    <h2 class="titulo">Este año</h2>
+    <p class="parrafo">Volvimos a hablar y algo que me parece curioso es que soñabas con cosas que hacía y realmente tenían sentido en la vida real, usted es como una maga de los sueños.</p>
+    <p class="parrafo">A mitad de año te dije lo que siento. No fue una declaración y no te pedí nada: solo necesitaba que lo supieras de mi boca y no por suposición.</p>
+    <p class="parrafo">Tú fuiste honesta conmigo. Me dijiste que no era tu momento, que venías saliendo de tu relación y obviamente eso no se olvida de la noche a la mañana, lo sé.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="5">Seguir</button>
+    </div>
+    <button class="volver" data-ir="3">volver</button>
+  </section>
+
+  <!-- 5 -->
+  <section class="capitulo" data-cap="5"
+           data-alto="#1B2B5C" data-medio="#3E4795" data-bajo="#6A64A8" data-luz=".58" data-estrellas=".22">
+    <h2 class="titulo">Y llegué<br>hasta aquí</h2>
+    <p class="parrafo">Ha pasado el tiempo. Ha habido momentos entre los dos que ninguno de los dos podría llamar amistad.</p>
+    <p class="parrafo">Tú lo sabes. Yo lo sé. Y yo ya no quiero seguir fingiendo que no lo sé.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="6">Leer la carta</button>
+    </div>
+    <button class="volver" data-ir="4">volver</button>
+  </section>
+
+  <!-- 6 · carta -->
+  <section class="capitulo" data-cap="6"
+           data-alto="#28356E" data-medio="#5A5AA2" data-bajo="#9A7BA8" data-luz=".72" data-estrellas=".10">
+    <div class="carta">
+      <p class="parrafo">Ariana:</p>
+      <p class="parrafo">Te escribo esto de la forma más honesta que sé, que es diciendo las cosas sin rodeos.</p>
+      <p class="parrafo">Eres la única persona que no he podido sacar de mi cabeza, y créeme que lo intenté. Lo intenté con distancia, con silencio, con otras personas y con años de por medio. Nada funcionó. No porque no quisiera olvidarte, sino porque contigo no hay nada que olvidar: tú simplemente sigues ahí, como una costumbre buena que no se me quita.</p>
+      <p class="parrafo">No te estoy escribiendo desde el chico de bachillerato que se fue porque no supo esperar. Ese ya aprendió. Aprendió que querer a alguien no es apurarlo, es acompañarlo aunque no te toque nada a cambio. Usted me importa demasiado, y es por eso que no quiero dejar las cosas entre nosotros de forma incierta.</p>
+      <p class="parrafo">Y no te estoy pidiendo una relación de esas que duran lo que dura el entusiasmo. Yo pienso en ti a largo plazo: en cuidarte cuando estés mal, en aguantarte los días en que ni tú te aguantes, en construir algo contigo, en una familia, en una vida entera. Suena grande y ya sé que suena grande. Pero prefiero decírtelo tal como lo siento a quedarme corto otra vez.</p>
+      <p class="parrafo">Dicen que la hora azul dura muy poco, que es ese ratito en que el cielo se pone de un color que no le pertenece y después se va. <span class="realce">Yo llevo un buen tiempo en esa hora, esperando amanecer contigo.</span></p>
+      <p class="parrafo">Si tu respuesta no es hoy, te la voy a respetar. Quiero que pienses bien las cosas, aunque no lo pienses mucho, porque luego me pongo muy negro con el sol y no me vas a querer, por cierto, mi reina hermosa. No vas a perder nada conmigo. Pero no me iba a quedar con esto guardado una vez más.</p>
+      <p class="firma">Misael</p>
+    </div>
+    <div class="acciones">
+      <button class="btn" data-ir="7">Tengo algo que preguntarte</button>
+    </div>
+    <button class="volver" data-ir="5">volver</button>
+  </section>
+
+  <!-- 7 · la pregunta -->
+  <section class="capitulo centro" data-cap="7"
+           data-alto="#3B4184" data-medio="#7C6FAE" data-bajo="#E5A0A6" data-luz=".92" data-estrellas="0">
+    <h2 class="pregunta">¿Me concedes el honor de acompañarme, para que las 5:53 dejen de ser el final de la hora azul y sean el inicio de algo que creamos juntos?</h2>
+    <div class="acciones">
+      <button class="btn btn-si" data-ir="8">Sí, te acompaño</button>
+      <button class="btn btn-tenue" data-ir="9">Debo pensarlo</button>
+    </div>
+  </section>
+
+  <!-- 8 · sí -->
+  <section class="capitulo centro" data-cap="8"
+           data-alto="#5A5AA2" data-medio="#C88FA4" data-bajo="#F3C89C" data-luz="1" data-estrellas="0">
+    <p class="corazon">Amaneció.</p>
+    <p class="parrafo">Gracias por decirme que sí, mi reina preciosa.</p>
+    <p class="parrafo">Te prometo que voy a cuidar esto todos los días, y que nos vamos a pasear por Ecuador y el mundo, y está más que claro que a cuevas cerradas no vamos a entrar.</p>
+    <p class="corazon" aria-hidden="true">♡</p>
+    <div class="acciones">
+      <button class="btn" data-ir="0">Volver al principio</button>
+    </div>
+  </section>
+
+  <!-- 9 · todavía no -->
+  <section class="capitulo centro" data-cap="9"
+           data-alto="#2A3670" data-medio="#5B5C9F" data-bajo="#8E7FB0" data-luz=".70" data-estrellas=".12">
+    <p class="parrafo">Está bien, mi reina bella.</p>
+    <p class="parrafo">No cambia nada de lo que te escribí y no cambia nada entre nosotros. Solo quería que supieras exactamente dónde estoy parado.</p>
+    <p class="parrafo">Aquí voy a seguir.</p>
+    <div class="acciones">
+      <button class="btn" data-ir="0">Volver al principio</button>
+    </div>
+  </section>
+
+</main>
+
+<nav class="progreso" id="progreso" aria-label="Avance"></nav>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==========================================================
+     MÚSICA — "Blue Hour", TXT
+     La página busca un archivo llamado blue-hour.mp3 que esté
+     en la misma carpeta que este archivo HTML.
+     Si no lo encuentra, el ícono de arriba a la derecha abre
+     un selector para escoger la canción desde el dispositivo.
+     Volumen: 40 %.
+     ========================================================== */
+  var MUSICA  = 'blue-hour.mp3';
+  var VOLUMEN = 0.20;
+
+  var capitulos = Array.prototype.slice.call(document.querySelectorAll('.capitulo'));
+  var progreso  = document.getElementById('progreso');
+  var cielo     = document.documentElement;
+  var actual    = 0;
+  var TOTAL_RUTA = 8; // capítulos 0–7 (las respuestas no cuentan)
+
+  /* ---- puntos de progreso ---- */
+  for (var i = 0; i < TOTAL_RUTA; i++){
+    var p = document.createElement('span');
+    p.className = 'punto';
+    progreso.appendChild(p);
+  }
+  var puntos = Array.prototype.slice.call(progreso.children);
+
+  function pintarProgreso(n){
+    var enRuta = n < TOTAL_RUTA;
+    progreso.style.opacity = enRuta ? '1' : '0';
+    puntos.forEach(function(pt, idx){
+      pt.className = 'punto' + (idx === n ? ' aqui' : (idx < n ? ' visto' : ''));
+    });
+  }
+
+  /* ---- cielo ---- */
+  function pintarCielo(sec){
+    cielo.style.setProperty('--cielo-alto',  sec.dataset.alto);
+    cielo.style.setProperty('--cielo-medio', sec.dataset.medio);
+    cielo.style.setProperty('--cielo-bajo',  sec.dataset.bajo);
+    cielo.style.setProperty('--luz',         sec.dataset.luz);
+    cielo.style.setProperty('--estrellas',   sec.dataset.estrellas);
+  }
+
+  /* ---- navegación ---- */
+  function ir(n){
+    var destino = capitulos[n];
+    if (!destino) return;
+    capitulos.forEach(function(c){ c.classList.remove('activo'); });
+    destino.classList.add('activo');
+    // reinicia la animación de entrada
+    void destino.offsetWidth;
+    pintarCielo(destino);
+    pintarProgreso(n);
+    actual = n;
+    window.scrollTo({ top:0, behavior:'instant' in document.documentElement.style ? 'instant' : 'auto' });
+    var foco = destino.querySelector('.titulo, .nombre, .pregunta, .corazon');
+    if (foco){ foco.setAttribute('tabindex','-1'); foco.focus({ preventScroll:true }); }
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-ir]');
+    if (!b) return;
+    intentarSonar();
+    ir(parseInt(b.dataset.ir, 10));
+  });
+
+  /* ---- estrellas ---- */
+  (function sembrarEstrellas(){
+    var campo = document.getElementById('estrellas');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var n = window.innerWidth < 600 ? 55 : 110;
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < n; i++){
+      var s = document.createElement('span');
+      var tam = (Math.random() * 1.9 + .5).toFixed(2);
+      s.className = 'estrella';
+      s.style.width  = tam + 'px';
+      s.style.height = tam + 'px';
+      s.style.left   = (Math.random() * 100).toFixed(2) + '%';
+      s.style.top    = (Math.random() * 82).toFixed(2) + '%';
+      if (!reduce){
+        s.style.setProperty('--dur', (Math.random() * 5 + 3.5).toFixed(1) + 's');
+        s.style.setProperty('--del', (Math.random() * 6).toFixed(1) + 's');
+      } else {
+        s.style.opacity = '.5';
+      }
+      frag.appendChild(s);
+    }
+    campo.appendChild(frag);
+  })();
+
+  /* ---- música ---- */
+  var audio   = document.getElementById('audio');
+  var boton   = document.getElementById('musica');
+  var archivo = document.getElementById('archivo');
+  var credito = document.getElementById('credito');
+  var listo   = false;
+
+  if (MUSICA){ audio.src = MUSICA; listo = true; }
+
+  function marcar(sonando){
+    boton.dataset.sonando = sonando ? 'si' : 'no';
+    boton.setAttribute('aria-label', sonando ? 'Silenciar la música' : 'Poner la música');
+  }
+
+  function intentarSonar(){
+    if (!listo || !audio.paused) return;
+    audio.volume = 0;
+    var pr = audio.play();
+    if (pr && pr.catch) pr.catch(function(){});
+    subirVolumen();
+    marcar(true);
+  }
+
+  function subirVolumen(){
+    var v = 0;
+    var t = setInterval(function(){
+      v += 0.025;
+      if (v >= VOLUMEN){ v = VOLUMEN; clearInterval(t); }
+      audio.volume = v;
+    }, 90);
+  }
+
+  /* si blue-hour.mp3 no está junto al archivo, se ofrece el selector */
+  audio.addEventListener('error', function(){
+    listo = false;
+    marcar(false);
+    if (credito) credito.textContent = '♪  elegir «Blue Hour» de TXT';
+  });
+
+  boton.addEventListener('click', function(){
+    if (!listo){ archivo.click(); return; }
+    if (audio.paused){ intentarSonar(); }
+    else { audio.pause(); marcar(false); }
+  });
+
+  archivo.addEventListener('change', function(){
+    var f = archivo.files && archivo.files[0];
+    if (!f) return;
+    audio.src = URL.createObjectURL(f);
+    listo = true;
+    if (credito) credito.textContent = '♪  Blue Hour — TXT';
+    intentarSonar();
+  });
+
+  if (credito){
+    credito.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (!listo){ archivo.click(); return; }
+      if (audio.paused) intentarSonar();
+    });
+  }
+
+  audio.addEventListener('pause', function(){ marcar(false); });
+  audio.addEventListener('play',  function(){ marcar(true);  });
+
+  /* ---- teclado ---- */
+  document.addEventListener('keydown', function(e){
+    if (actual >= TOTAL_RUTA) return;
+    if (e.key === 'ArrowRight' && actual < 7) ir(actual + 1);
+    if (e.key === 'ArrowLeft'  && actual > 0) ir(actual - 1);
+  });
+
+  /* ---- arranque ---- */
+  pintarCielo(capitulos[0]);
+  pintarProgreso(0);
+})();
+</script>
+</body>
+</html>
